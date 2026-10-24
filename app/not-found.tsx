@@ -1,0 +1,2 @@
+import Link from "next/link";
+export default function NotFound(){return <main className="container" style={{padding:"100px 0",textAlign:"center"}}><div className="eyebrow">404 · Page not found</div><h1 className="section-title">This route doesn't exist.</h1><p className="muted">Check the address or return to the Anti Logic workspace.</p><Link href="/" className="btn btn-primary" style={{marginTop:18}}>Back home</Link></main>}
