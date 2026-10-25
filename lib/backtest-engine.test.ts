@@ -48,14 +48,17 @@ describe("runBinaryBacktest", () => {
       rules: alwaysMatch,
     });
 
-    expect(result.totalTrades).toBe(10);
-    expect(result.wins).toBe(10);
+    expect(result.totalTrades).toBe(5);
+    expect(result.wins).toBe(5);
     expect(result.losses).toBe(0);
     expect(result.winRate).toBe(100);
-    expect(result.netProfitLoss).toBeCloseTo(8);
-    expect(result.totalStaked).toBe(10);
+    expect(result.netProfitLoss).toBeCloseTo(4);
+    expect(result.totalStaked).toBe(5);
     expect(result.roiPercent).toBeCloseTo(80);
     expect(result.maxConsecutiveLosses).toBe(0);
+    const candles = makeCandles(Array.from({ length: 25 }, (_, index) => 100 + index));
+    expect(result.trades[0].entryTimestamp).toBe(candles[15].timestamp);
+    expect(result.trades[0].exitTimestamp).toBe(candles[16].timestamp);
   });
 
   it("treats ties as break-even when configured", () => {
@@ -68,11 +71,48 @@ describe("runBinaryBacktest", () => {
       rules: alwaysMatch,
     });
 
-    expect(result.totalTrades).toBe(5);
-    expect(result.draws).toBe(5);
+    expect(result.totalTrades).toBe(2);
+    expect(result.draws).toBe(2);
     expect(result.losses).toBe(0);
     expect(result.winRate).toBeNull();
     expect(result.netProfitLoss).toBe(0);
+  });
+
+  it("keeps ties separate when ties are charged as losses", () => {
+    const result = runBinaryBacktest(makeCandles(Array.from({ length: 20 }, () => 100)), {
+      direction: "CALL",
+      durationBars: 1,
+      stake: 2,
+      netPayoutMultiple: 0.8,
+      tieHandling: "loss",
+      rules: alwaysMatch,
+    });
+
+    expect(result.totalTrades).toBe(2);
+    expect(result.wins).toBe(0);
+    expect(result.losses).toBe(0);
+    expect(result.draws).toBe(2);
+    expect(result.winRate).toBe(0);
+    expect(result.netProfitLoss).toBe(-4);
+    expect(result.maxConsecutiveLosses).toBe(2);
+  });
+
+  it("retains the latest 5,000 trade details for large simulations", () => {
+    const candles = makeCandles(Array.from({ length: 10_100 }, (_, index) => 100 + index));
+    const result = runBinaryBacktest(candles, {
+      direction: "CALL",
+      durationBars: 1,
+      stake: 1,
+      netPayoutMultiple: 0.8,
+      tieHandling: "loss",
+      rules: alwaysMatch,
+    });
+
+    expect(result.totalTrades).toBe(5_042);
+    expect(result.trades).toHaveLength(5_000);
+    expect(result.tradesTruncated).toBe(true);
+    expect(result.trades[0].entryTimestamp).toBe(candles[99].timestamp);
+    expect(result.trades[result.trades.length - 1].entryTimestamp).toBe(candles[10_097].timestamp);
   });
 
   it("rejects invalid payout assumptions", () => {
