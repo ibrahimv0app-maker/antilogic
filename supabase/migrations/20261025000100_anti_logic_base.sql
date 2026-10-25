@@ -32,6 +32,7 @@ create table if not exists public.strategies (
   configuration jsonb not null default '{}'::jsonb check (jsonb_typeof(configuration) = 'object'),
   status text not null default 'draft' check (status in ('draft','validated','disabled')),
   current_version integer not null default 1 check (current_version > 0),
+  unique (id, user_id),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -39,12 +40,13 @@ create index if not exists strategies_user_updated_idx on public.strategies (use
 
 create table if not exists public.strategy_versions (
   id uuid primary key default gen_random_uuid(),
-  strategy_id uuid not null references public.strategies(id) on delete cascade,
+  strategy_id uuid not null,
   user_id uuid not null references auth.users(id) on delete cascade,
   version integer not null check (version > 0),
   configuration jsonb not null check (jsonb_typeof(configuration) = 'object'),
   created_at timestamptz not null default now(),
-  unique (strategy_id, version)
+  unique (strategy_id, version),
+  constraint strategy_versions_owned_strategy_fkey foreign key (strategy_id, user_id) references public.strategies(id, user_id) on delete cascade
 );
 create index if not exists strategy_versions_user_strategy_idx on public.strategy_versions (user_id, strategy_id, version desc);
 
@@ -104,15 +106,23 @@ create policy "strategy_versions_insert_own" on public.strategy_versions for ins
 create policy "strategy_versions_delete_own" on public.strategy_versions for delete to authenticated using ((select auth.uid()) = user_id);
 
 create policy "telegram_select_own" on public.telegram_connections for select to authenticated using ((select auth.uid()) = user_id);
-create policy "telegram_insert_own" on public.telegram_connections for insert to authenticated with check ((select auth.uid()) = user_id);
-create policy "telegram_update_own" on public.telegram_connections for update to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
 create policy "telegram_delete_own" on public.telegram_connections for delete to authenticated using ((select auth.uid()) = user_id);
 
 create policy "automation_preferences_select_own" on public.automation_preferences for select to authenticated using ((select auth.uid()) = user_id);
-create policy "automation_preferences_insert_own" on public.automation_preferences for insert to authenticated with check ((select auth.uid()) = user_id);
-create policy "automation_preferences_update_own" on public.automation_preferences for update to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
 
 create policy "audit_events_select_own" on public.app_audit_events for select to authenticated using ((select auth.uid()) = user_id);
-create policy "audit_events_insert_own" on public.app_audit_events for insert to authenticated with check ((select auth.uid()) = user_id);
 
 -- No anonymous access, no public write access, no service-role key in browser code.
+
+-- Explicit least-privilege grants for the public Data API. RLS still controls each row.
+grant usage on schema public to authenticated;
+grant select, insert, update on public.profiles to authenticated;
+grant select, insert, update on public.user_preferences to authenticated;
+grant select, insert, update, delete on public.strategies to authenticated;
+grant select, insert, delete on public.strategy_versions to authenticated;
+grant select, delete on public.telegram_connections to authenticated;
+grant select on public.automation_preferences to authenticated;
+grant select on public.app_audit_events to authenticated;
+
+-- Verified Telegram connection state and automation controls must be written by trusted
+-- server-side code, never directly by an untrusted browser client.
