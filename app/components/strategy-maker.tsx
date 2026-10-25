@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Plus, Save, ShieldCheck, Trash2, LoaderCircle } from "lucide-react";
 import { createClient, isSupabaseBrowserConfigured } from "@/lib/supabase/client";
+import { createClientUuid } from "@/lib/client-uuid";
 
 type Rule = { id: number; indicator: "RSI" | "Moving Average" | "Momentum"; operator: "above" | "below"; threshold: string };
 type Draft = { id: string; name: string; symbol: string; contractType: "CALL" | "PUT"; duration: string; stake: string; rules: Rule[]; savedAt: string };
@@ -96,7 +97,7 @@ export function StrategyMaker() {
     if (!validate()) return;
     setSaving(true);
     setMessage("");
-    const id = draftId || (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : "draft-" + Date.now());
+    const id = draftId || createClientUuid();
     const draft: Draft = { id, name: name.trim(), symbol, contractType, duration, stake, rules, savedAt: new Date().toISOString() };
     try {
       const supabase = createClient();
