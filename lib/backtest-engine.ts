@@ -224,12 +224,15 @@ export function runBinaryBacktest(candles: Candle[], options: BacktestOptions): 
   let tradeCount = 0;
   let nextEligibleIndex = 14;
 
-  for (let index = 14; index + options.durationBars < candles.length; index += 1) {
+  for (let index = 14; index + 1 + options.durationBars < candles.length; index += 1) {
     if (index < nextEligibleIndex) continue;
     if (!options.rules.every((rule) => rulePasses(rule, closes, index))) continue;
 
-    const entryPrice = closes[index];
-    const exitIndex = index + options.durationBars;
+    // Signal is evaluated on the current candle close. Use the next candle close as a
+    // simplified fill so the signal candle close is not also treated as an executable price.
+    const entryIndex = index + 1;
+    const entryPrice = closes[entryIndex];
+    const exitIndex = entryIndex + options.durationBars;
     nextEligibleIndex = exitIndex;
     const exitPrice = closes[exitIndex];
     const higher = exitPrice > entryPrice;
@@ -269,7 +272,7 @@ export function runBinaryBacktest(candles: Candle[], options: BacktestOptions): 
     tradeCount += 1;
 
     const recordedTrade: BacktestTrade = {
-      entryTimestamp: candles[index].timestamp,
+      entryTimestamp: candles[entryIndex].timestamp,
       exitTimestamp: candles[exitIndex].timestamp,
       entryPrice,
       exitPrice,
@@ -307,7 +310,7 @@ export function runBinaryBacktest(candles: Candle[], options: BacktestOptions): 
     tradesTruncated: tradeCount > MAX_RESULT_TRADES,
     assumptions: [
       "Uses only the user-selected CSV in this browser; the file is not uploaded or stored by Anti Logic.",
-      "Signals are evaluated on each candle close and the outcome is checked after the selected number of bars.",
+      "Signals are evaluated at candle index i, the simplified simulated entry is the next candle close i+1, and expiry is checked after the selected number of additional bars.",
       "Only one hypothetical position is open at a time; the next entry is considered after the previous simulated expiry.",
       "RSI uses a simple 14-change average, moving-average spread uses close minus the 14-bar simple moving average, and momentum is the 5-bar percentage change.",
       "A win earns the configured net payout multiple; a loss loses the full stake.",
