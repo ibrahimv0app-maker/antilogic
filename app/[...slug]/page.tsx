@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, BookOpen, ShieldCheck } from "lucide-react";
+import { PublicHeader } from "@/app/components/public-header";
 
 type Section = { heading: string; body: string };
 type PublicPage = { title: string; description: string; sections: Section[] };
@@ -36,17 +37,17 @@ export default async function PublicPage({ params }: { params: Promise<{ slug: s
   const { slug } = await params;
   const key = slug.join("/");
   if (key === "blog") {
-    return <main className="container public-content">
+    return <><PublicHeader /><main className="container public-content">
       <Link href="/" className="brand"><span className="brand-mark">A</span><span>anti logic<span style={{color:"var(--lime)"}}>.</span></span></Link>
       <div className="eyebrow public-eyebrow">Learn & research</div><h1 className="section-title">Research library</h1><p className="muted public-lead">Practical articles about binary contract mechanics, strategy evaluation, and responsible AI research.</p>
       <div className="article-grid">{articles.map((article) => <article key={article.slug} className="panel article-card"><span className="status">{article.category}</span><h2>{article.title}</h2><p className="muted">{article.summary}</p><Link href={"/blog/" + article.slug} className="article-link">Read article <ArrowRight size={14}/></Link></article>)}</div>
       <Link href="/" className="btn" style={{marginTop:24}}>Back home</Link>
-    </main>;
+    </main></>;
   }
   const data = pages[key];
   if (!data) notFound();
 
-  return <main className="container public-content">
+  return <><PublicHeader /><main className="container public-content">
     <Link href="/" className="brand"><span className="brand-mark">A</span><span>anti logic<span style={{color:"var(--lime)"}}>.</span></span></Link>
     <div className="eyebrow public-eyebrow">Anti Logic / Information</div>
     <h1 className="section-title">{data.title}</h1>
@@ -54,5 +55,5 @@ export default async function PublicPage({ params }: { params: Promise<{ slug: s
     <div className="public-sections">{data.sections.map((section) => <section key={section.heading} className="panel card-pad"><h2>{section.heading}</h2><p className="muted">{section.body}</p></section>)}</div>
     {key.startsWith("legal/") && <div className="notice legal-notice"><ShieldCheck size={15}/> Draft content — review for the applicable business and jurisdictions before public release.</div>}
     <Link href={key.startsWith("blog/") ? "/blog" : "/"} className="btn" style={{marginTop:24}}>{key.startsWith("blog/") ? "← Back to research" : "← Back home"}</Link>
-  </main>;
+  </main></>;
 }
