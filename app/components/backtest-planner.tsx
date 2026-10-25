@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
-import { AlertCircle, CheckCircle2, FileUp, FlaskConical, LoaderCircle, Play, RotateCcw, ShieldCheck } from "lucide-react";
+import { AlertCircle, CheckCircle2, Download, FileUp, FlaskConical, LoaderCircle, Play, RotateCcw, ShieldCheck } from "lucide-react";
 import { parsePriceCsv, runBinaryBacktest, type BacktestResult, type BacktestRule, type Candle } from "@/lib/backtest-engine";
 import { createClient, isSupabaseBrowserConfigured } from "@/lib/supabase/client";
 
@@ -39,7 +39,6 @@ export function BacktestPlanner() {
   const [strategies, setStrategies] = useState<Strategy[]>([]);
   const [selectedId, setSelectedId] = useState("");
   const [strategiesLoaded, setStrategiesLoaded] = useState(false);
-  const [strategySource, setStrategySource] = useState<"local" | "account" | "none">("none");
   const [candles, setCandles] = useState<Candle[]>([]);
   const [fileName, setFileName] = useState("");
   const [direction, setDirection] = useState<"CALL" | "PUT">("CALL");
@@ -99,7 +98,6 @@ export function BacktestPlanner() {
                 });
                 if (!cancelled) {
                   setStrategies(remote);
-                  setStrategySource("account");
                   setSelectedId(remote[0]?.id || "");
                   if (remote[0]) { setDirection(remote[0].contractType === "PUT" ? "PUT" : "CALL"); setStake(remote[0].stake); }
                   setStrategiesLoaded(true);
@@ -116,7 +114,6 @@ export function BacktestPlanner() {
 
       if (!cancelled) {
         setStrategies(local);
-        setStrategySource(local.length ? "local" : "none");
         setSelectedId(local[0]?.id || "");
         if (local[0]) { setDirection(local[0].contractType === "PUT" ? "PUT" : "CALL"); setStake(local[0].stake); }
         setStrategiesLoaded(true);
