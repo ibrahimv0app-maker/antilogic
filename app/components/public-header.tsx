@@ -4,14 +4,14 @@ import Link from "next/link";
 import { useState } from "react";
 import { ArrowRight, Menu, X } from "lucide-react";
 
-function Brand() {
-  return <Link href="/" className="brand" onClick={() => setOpen(false)}><span className="brand-mark">A</span><span>anti logic<span style={{color:"var(--lime)"}}>.</span></span></Link>;
+function Brand({ onClick }: { onClick?: () => void }) {
+  return <Link href="/" className="brand" onClick={onClick}><span className="brand-mark">A</span><span>anti logic<span style={{color:"var(--lime)"}}>.</span></span></Link>;
 }
 
 export function PublicHeader() {
   const [open, setOpen] = useState(false);
   return <header className="site-header"><div className="container public-header-inner">
-    <Brand />
+    <Brand onClick={() => setOpen(false)} />
     <nav className={"nav-links public-header-nav " + (open ? "public-mobile-open" : "")} aria-label="Main navigation">
       <Link href="/platform" onClick={() => setOpen(false)}>Platform</Link>
       <Link href="/features" onClick={() => setOpen(false)}>Features</Link>
