@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowUpRight, Bot, ChartCandlestick, Clock3, FlaskConical, Plus, ShieldCheck, Waypoints } from "lucide-react";
+import { ArrowUpRight, Bot, ChartCandlestick, Clock3, FlaskConical, ShieldCheck, Waypoints } from "lucide-react";
 import { createClient, isSupabaseBrowserConfigured } from "@/lib/supabase/client";
 
 const STRATEGY_KEY = "anti-logic:strategy-drafts:v1";
