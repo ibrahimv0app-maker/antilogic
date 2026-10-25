@@ -23,6 +23,7 @@ const TIMEFRAMES = [
 
 type MarketSymbol = { symbol: string; name: string; category: string };
 type Candle = { epoch: number; open: number; high: number; low: number; close: number };
+type PricePoint = { epoch: number; quote: number };
 type ConnectionState = "connecting" | "connected" | "reconnecting" | "offline" | "error";
 
 function normalizeCandle(value: Record<string, unknown>): Candle | null {
@@ -67,6 +68,7 @@ export function MarketWorkspace() {
   const [enabledIndicators, setEnabledIndicators] = useState<string[]>(["Moving average"]);
   const [symbols, setSymbols] = useState<MarketSymbol[]>(FALLBACK_SYMBOLS);
   const [candles, setCandles] = useState<Candle[]>([]);
+  const [liveTicks, setLiveTicks] = useState<PricePoint[]>([]);
   const [connection, setConnection] = useState<ConnectionState>("connecting");
   const [connectionError, setConnectionError] = useState("");
   const [lastTickAt, setLastTickAt] = useState<number | null>(null);
@@ -82,6 +84,18 @@ export function MarketWorkspace() {
   }, [symbols, query]);
   const activeTimeframe = TIMEFRAMES.find((item) => item.seconds === timeframeSeconds) || TIMEFRAMES[0];
   const latestCandle = candles.length ? candles[candles.length - 1] : null;
+  const tickLinePoints = useMemo(() => {
+    if (liveTicks.length < 2) return "";
+    const quotes = liveTicks.map((tick) => tick.quote);
+    const minimum = Math.min(...quotes);
+    const maximum = Math.max(...quotes);
+    const range = maximum - minimum || Math.max(Math.abs(maximum) * 0.0001, 0.000001);
+    return liveTicks.map((tick, index) => {
+      const x = (index / (liveTicks.length - 1)) * 800;
+      const y = 175 - ((tick.quote - minimum) / range) * 150;
+      return x.toFixed(2) + "," + y.toFixed(2);
+    }).join(" ");
+  }, [liveTicks]);
   const minimumPrice = candles.length ? Math.min(...candles.map((item) => item.low)) : 0;
   const maximumPrice = candles.length ? Math.max(...candles.map((item) => item.high)) : 1;
   const priceRange = maximumPrice - minimumPrice || Math.max(Math.abs(maximumPrice) * 0.0001, 0.000001);
@@ -127,6 +141,7 @@ export function MarketWorkspace() {
     const tickReqId = 103;
 
     setCandles([]);
+    setLiveTicks([]);
     setLastTickAt(null);
     setLastQuote(null);
     setConnectionError("");
@@ -215,6 +230,10 @@ export function MarketWorkspace() {
         const epoch = Number(tick.epoch);
         if (Number.isFinite(quote) && Number.isFinite(epoch)) {
           setLastQuote(quote);
+          setLiveTicks((old) => {
+            const next = [...old, { epoch, quote }].slice(-200);
+            return next;
+          });
           setLastTickAt(Date.now());
           setConnection("connected");
           receivedMarketData = true;
@@ -331,7 +350,11 @@ export function MarketWorkspace() {
             <div className="chart-y-labels"><span>{formatPrice(maximumPrice, pipSize)}</span><span>{formatPrice((maximumPrice + minimumPrice) / 2, pipSize)}</span><span>{formatPrice(minimumPrice, pipSize)}</span></div>
             <svg viewBox="0 0 800 190" preserveAspectRatio="none" aria-label="Live market candlestick chart"><defs><clipPath id="candleClip"><rect x="0" y="0" width="800" height="190"/></clipPath></defs>{[25,65,105,145,185].map((y)=><line key={y} x1="0" y1={y} x2="800" y2={y} stroke="currentColor" strokeOpacity=".09" strokeDasharray="3 6"/>)}<g clipPath="url(#candleClip)">{candles.map((candle, index) => { const x = ((index + 0.5) / candles.length) * 800; const openY = chartY(candle.open, minimumPrice, priceRange); const closeY = chartY(candle.close, minimumPrice, priceRange); const highY = chartY(candle.high, minimumPrice, priceRange); const lowY = chartY(candle.low, minimumPrice, priceRange); const bullish = candle.close >= candle.open; const color = bullish ? "#72d9d2" : "#ff7e87"; return <g key={candle.epoch}><line x1={x} x2={x} y1={highY} y2={lowY} stroke={color} strokeWidth="1.1"/><rect x={x - candleWidth / 2} y={Math.min(openY, closeY)} width={candleWidth} height={Math.max(1.2, Math.abs(openY - closeY))} rx=".6" fill={color}/></g>; })}{movingAveragePoints && <polyline points={movingAveragePoints} fill="none" stroke="#c6f36a" strokeWidth="1.7" strokeDasharray="4 4" strokeLinecap="round"/>}</g></svg>
             <div className="chart-x-labels"><span>{formatCandleTime(candles[0].epoch, timeframeSeconds)}</span><span>{activeTimeframe.label} candles · {candles.length} shown</span><span>{latestCandle ? formatCandleTime(latestCandle.epoch, timeframeSeconds) : ""}</span></div>
-          </> : <div className="chart-waiting"><div className="chart-waiting-icon">{connection === "connected" ? <Clock3 size={20}/> : <WifiOff size={20}/>}</div><strong>{connection === "connected" ? "Waiting for candle history" : connection === "error" || connection === "offline" ? "Market feed unavailable" : "Connecting to public market data"}</strong><span>{connectionError || (connection === "connected" ? "The connection is open. Waiting for valid candle responses." : "Anti Logic will not display a fake price chart while disconnected.")}</span>{recentRetries > 0 && <small>Reconnect attempt {recentRetries} of 5</small>}</div>}
+          </> : liveTicks.length >= 2 ? <>
+            <div className="chart-y-labels"><span>{formatPrice(Math.max(...liveTicks.map((item) => item.quote)), pipSize)}</span><span>{formatPrice((Math.max(...liveTicks.map((item) => item.quote)) + Math.min(...liveTicks.map((item) => item.quote))) / 2, pipSize)}</span><span>{formatPrice(Math.min(...liveTicks.map((item) => item.quote)), pipSize)}</span></div>
+            <svg viewBox="0 0 800 190" preserveAspectRatio="none" aria-label="Live public market tick line chart"><defs><linearGradient id="tickArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#c6f36a" stopOpacity=".16"/><stop offset="1" stopColor="#c6f36a" stopOpacity="0"/></linearGradient></defs>{[25,65,105,145,185].map((y)=><line key={y} x1="0" y1={y} x2="800" y2={y} stroke="currentColor" strokeOpacity=".09" strokeDasharray="3 6"/>)}<polygon points={"0,190 " + tickLinePoints + " 800,190"} fill="url(#tickArea)"/><polyline points={tickLinePoints} fill="none" stroke="#c6f36a" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round"/></svg>
+            <div className="chart-x-labels"><span>{new Date(liveTicks[0].epoch * 1000).toLocaleTimeString()}</span><span>Live ticks · {liveTicks.length} quotes</span><span>{new Date(liveTicks[liveTicks.length - 1].epoch * 1000).toLocaleTimeString()}</span></div>
+                    </> : <div className="chart-waiting"><div className="chart-waiting-icon">{connection === "connected" ? <Clock3 size={20}/> : <WifiOff size={20}/>}</div><strong>{connection === "connected" ? "Waiting for candle history" : connection === "error" || connection === "offline" ? "Market feed unavailable" : "Connecting to public market data"}</strong><span>{connectionError || (connection === "connected" ? "The connection is open. Waiting for candle history or additional live ticks." : "Anti Logic will not display a fake price chart while disconnected.")}</span>{recentRetries > 0 && <small>Reconnect attempt {recentRetries} of 5</small>}</div>}
         </div>
         <div className="indicator-toolbar"><span className="field-hint">Indicators are computed from received candle data only:</span>{["Moving average"].map((indicator)=><button key={indicator} className={"indicator-chip " + (enabledIndicators.includes(indicator) ? "active" : "")} onClick={() => toggleIndicator(indicator)}>{indicator}</button>)}</div>
       </div>
