@@ -150,6 +150,7 @@ export function MarketWorkspace() {
     }
 
     function handleMessage(event: MessageEvent<string>) {
+      if (disposed) return;
       let message: Record<string, unknown>;
       try { message = JSON.parse(event.data) as Record<string, unknown>; }
       catch { setConnectionError("Received an unreadable response from the public market-data service."); return; }
