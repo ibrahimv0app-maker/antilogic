@@ -121,6 +121,7 @@ export function MarketWorkspace() {
     let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
     let reconnectAttempt = 0;
     const subscriptions = new Set<number>();
+    let receivedMarketData = false;
     const activeReqId = 101;
     const historyReqId = 102;
     const tickReqId = 103;
@@ -142,6 +143,10 @@ export function MarketWorkspace() {
       const last = incoming[incoming.length - 1];
       setLastQuote(last.close);
       setLastTickAt(Date.now());
+      receivedMarketData = true;
+      reconnectAttempt = 0;
+      setRecentRetries(0);
+      setConnection("connected");
     }
 
     function handleMessage(event: MessageEvent<string>) {
@@ -211,12 +216,15 @@ export function MarketWorkspace() {
           setLastQuote(quote);
           setLastTickAt(Date.now());
           setConnection("connected");
+          receivedMarketData = true;
+          reconnectAttempt = 0;
+          setRecentRetries(0);
           if (Number.isFinite(Number(tick.pip_size))) setPipSize(Number(tick.pip_size));
         }
       }
 
       const echoed = message.echo_req && typeof message.echo_req === "object" ? message.echo_req as Record<string, unknown> : null;
-      if (echoed && Number(echoed.req_id) === activeReqId && msgType === "active_symbols") setConnection("connected");
+      if (echoed && Number(echoed.req_id) === activeReqId && msgType === "active_symbols" && !receivedMarketData) setConnection("connecting");
     }
 
     function connect() {
@@ -232,9 +240,7 @@ export function MarketWorkspace() {
 
       socket.onopen = () => {
         if (disposed || !socket) return;
-        reconnectAttempt = 0;
-        setRecentRetries(0);
-        setConnection("connected");
+        setConnection("connecting");
         setConnectionError("");
         socket.send(JSON.stringify({ active_symbols: "brief", req_id: activeReqId }));
         socket.send(JSON.stringify({
@@ -253,7 +259,8 @@ export function MarketWorkspace() {
       socket.onmessage = handleMessage;
       socket.onerror = () => {
         if (disposed) return;
-        setConnectionError("The public market-data connection reported an error. Reconnecting if the socket closes.");
+        setConnectionError("The public market-data connection reported an error. Attempting to reconnect.");
+        try { socket?.close(); } catch {}
       };
       socket.onclose = () => {
         if (disposed) return;
