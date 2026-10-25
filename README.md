@@ -1,5 +1,9 @@
 # Anti Logic
 
+## Complete product specification
+
+The A–Z target scope, page-by-page behaviour, backend contracts, database and security requirements, delivery roadmap, AI-agent instructions, and production launch checklist are documented in [docs/PRODUCT_SPECIFICATION.md](docs/PRODUCT_SPECIFICATION.md). This is the target design; consult [docs/IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md) for the verified implementation state and remaining production blockers.
+
 Anti Logic is a demo-first workspace for binary trading research, strategy design, data inspection, browser-only backtesting, and future risk-aware automation.
 
 ## Current milestone
