@@ -284,7 +284,7 @@ export function runBinaryBacktest(candles: Candle[], options: BacktestOptions): 
       trades.push(recordedTrade);
     } else {
       // Keep a fixed-size circular buffer so large CSVs retain the latest detail rows.
-      trades[tradeCount % MAX_RESULT_TRADES] = recordedTrade;
+      trades[(tradeCount - 1) % MAX_RESULT_TRADES] = recordedTrade;
     }
   }
 
