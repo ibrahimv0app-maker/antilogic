@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AudioWaveform, Bell, BookOpen, ChartCandlestick, CircleHelp, Cog, ExternalLink, FlaskConical, ListChecks, ShieldCheck, SlidersHorizontal, UserRound, Waypoints, Bot, Activity, Cable } from "lucide-react";
@@ -98,4 +99,24 @@ export default async function WorkspacePage({ params }: { params: Promise<{ slug
     )}
     {key.startsWith("account/") && <div className="settings-links-grid" style={{marginTop:16}}>{[{href:"/app/account/profile",label:"Profile",icon:UserRound},{href:"/app/account/security",label:"Security",icon:ShieldCheck},{href:"/app/account/deriv",label:"Deriv connections",icon:Cable}].map((item)=>{const ItemIcon=item.icon;return <Link href={item.href} className="panel settings-link-card" key={item.href}><span className="feature-icon"><ItemIcon size={17}/></span><strong>{item.label}</strong></Link>;})}</div>}
   </main>;
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string[] }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const key = slug.join("/");
+  const specialTitles: Record<string, string> = {
+    "strategies/new": "Create strategy",
+    "strategy-maker": "Strategy maker",
+    "strategies": "Strategies",
+    "backtest": "Backtest lab",
+    "account": "My account",
+    "account/profile": "Profile",
+    "integrations/telegram": "Telegram alerts",
+    "settings/risk": "Risk controls",
+  };
+  const page = pages[key];
+  return {
+    title: specialTitles[key] || page?.title || "Workspace",
+    robots: { index: false, follow: false },
+  };
 }
