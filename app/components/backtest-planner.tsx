@@ -192,6 +192,12 @@ export function BacktestPlanner() {
     }
   }
 
+  function exportTimestamp(value: number) {
+    if (value >= 1_000_000_000_000) return new Date(value).toISOString();
+    if (value >= 1_000_000_000) return new Date(value * 1000).toISOString();
+    return String(value);
+  }
+
   function exportReport() {
     if (!result) return;
     const escapeCell = (value: string | number | boolean) => {
@@ -225,7 +231,7 @@ export function BacktestPlanner() {
       ...result.assumptions.map((assumption) => [assumption]),
       [],
       ["entry_timestamp", "exit_timestamp", "direction", "entry_close", "expiry_close", "result", "net_pl_units"],
-      ...result.trades.map((trade) => [new Date(trade.entryTimestamp).toISOString(), new Date(trade.exitTimestamp).toISOString(), trade.direction, trade.entryPrice, trade.exitPrice, trade.result, trade.netProfitLoss]),
+      ...result.trades.map((trade) => [exportTimestamp(trade.entryTimestamp), exportTimestamp(trade.exitTimestamp), trade.direction, trade.entryPrice, trade.exitPrice, trade.result, trade.netProfitLoss]),
     ];
     const csv = summaryRows.map((row) => row.map(escapeCell).join(",")).join("\r\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
