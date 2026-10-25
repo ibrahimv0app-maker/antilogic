@@ -1,7 +1,10 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Activity, BookOpen, CircleHelp, LayoutDashboard, Settings, ShieldCheck, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+
+export const metadata: Metadata = { title: "Administration", robots: { index: false, follow: false } };
 
 const nav = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
