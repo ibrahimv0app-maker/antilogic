@@ -11,11 +11,18 @@ type Strategy = { id: string; name: string; symbol: string; contractType: string
 type RemoteStrategy = { id: string; name: string; symbol: string; contract_type: string; configuration: Record<string, unknown> };
 
 function mapRules(rules: SavedRule[]): BacktestRule[] {
-  return rules.map((rule) => ({
-    indicator: rule.indicator === "Moving Average" || rule.indicator === "Momentum" ? rule.indicator : "RSI",
-    operator: rule.operator === "above" ? "above" : "below",
-    threshold: Number(rule.threshold),
-  }));
+  if (!rules.length) throw new Error("Add at least one entry condition in Strategy Maker.");
+  return rules.map((rule) => {
+    if (rule.indicator !== "RSI" && rule.indicator !== "Moving Average" && rule.indicator !== "Momentum") {
+      throw new Error("The selected strategy uses an unsupported indicator: " + rule.indicator + ".");
+    }
+    if (rule.operator !== "above" && rule.operator !== "below") {
+      throw new Error("The selected strategy uses an unsupported condition operator.");
+    }
+    const threshold = Number(rule.threshold);
+    if (!Number.isFinite(threshold)) throw new Error("Every strategy condition must have a numeric threshold.");
+    return { indicator: rule.indicator, operator: rule.operator, threshold };
+  });
 }
 
 function prettyTime(value: number): string {
@@ -94,6 +101,7 @@ export function BacktestPlanner() {
                   setStrategies(remote);
                   setStrategySource("account");
                   setSelectedId(remote[0]?.id || "");
+                  if (remote[0]) { setDirection(remote[0].contractType === "PUT" ? "PUT" : "CALL"); setStake(remote[0].stake); }
                   setStrategiesLoaded(true);
                   return;
                 }
@@ -110,6 +118,7 @@ export function BacktestPlanner() {
         setStrategies(local);
         setStrategySource(local.length ? "local" : "none");
         setSelectedId(local[0]?.id || "");
+        if (local[0]) { setDirection(local[0].contractType === "PUT" ? "PUT" : "CALL"); setStake(local[0].stake); }
         setStrategiesLoaded(true);
       }
     }
@@ -258,7 +267,7 @@ export function BacktestPlanner() {
       </section>
       <section className="panel card-pad">
         <div className="card-heading"><div><h2>2. Configure the simulation</h2><p className="muted" style={{fontSize:11,margin:"6px 0 0"}}>No actual order will be placed.</p></div><FlaskConical size={17} color="var(--lime)"/></div>
-        <div className="form-field"><label htmlFor="bt-strategy">Saved strategy</label><select id="bt-strategy" value={selectedId} onChange={(event) => { setSelectedId(event.target.value); setResult(null); }} disabled={!strategiesLoaded || strategies.length === 0}><option value="">{strategiesLoaded ? "Select a strategy" : "Loading strategies…"}</option>{strategies.map((strategy) => <option key={strategy.id} value={strategy.id}>{strategy.name}{strategy.source === "account" ? " (account)" : " (local)"}</option>)}</select></div>
+        <div className="form-field"><label htmlFor="bt-strategy">Saved strategy</label><select id="bt-strategy" value={selectedId} onChange={(event) => { const next = strategies.find((item) => item.id === event.target.value); setSelectedId(event.target.value); if (next) { setDirection(next.contractType === "PUT" ? "PUT" : "CALL"); setStake(next.stake); } setResult(null); }} disabled={!strategiesLoaded || strategies.length === 0}><option value="">{strategiesLoaded ? "Select a strategy" : "Loading strategies…"}</option>{strategies.map((strategy) => <option key={strategy.id} value={strategy.id}>{strategy.name}{strategy.source === "account" ? " (account)" : " (local)"}</option>)}</select></div>
         {selectedStrategy && <div className="selected-strategy-summary"><span className="status">{selectedStrategy.symbol}</span><span className="status">{selectedStrategy.rules.length} rule(s)</span><span className="status">{selectedStrategy.source === "account" ? "Account source" : "Local source"}</span><span className="field-hint">The simulation runs the selected rule conditions against imported close prices.</span></div>}
         <div className="form-grid"><div className="form-field"><label htmlFor="bt-direction">Binary direction</label><select id="bt-direction" value={direction} onChange={(event) => setDirection(event.target.value as "CALL" | "PUT")}><option value="CALL">CALL — win if expiry close is higher</option><option value="PUT">PUT — win if expiry close is lower</option></select></div><div className="form-field"><label htmlFor="bt-duration">Expiry horizon (bars)</label><input id="bt-duration" type="number" min="1" max="10000" step="1" value={durationBars} onChange={(event) => setDurationBars(event.target.value)}/></div><div className="form-field"><label htmlFor="bt-stake">Hypothetical stake (units)</label><input id="bt-stake" type="number" min="0.01" step="0.01" value={stake} onChange={(event) => setStake(event.target.value)}/></div><div className="form-field"><label htmlFor="bt-payout">Net profit on win (multiple of stake)</label><input id="bt-payout" type="number" min="0.01" max="10" step="0.05" value={payout} onChange={(event) => setPayout(event.target.value)}/></div><div className="form-field"><label htmlFor="bt-ties">Equal entry/expiry price</label><select id="bt-ties" value={tieHandling} onChange={(event) => setTieHandling(event.target.value as "loss" | "break_even")}><option value="loss">Count as loss (conservative)</option><option value="break_even">Treat as break-even</option></select></div></div>
         {breakEven !== null && <div className="break-even-panel"><span className="muted">Break-even win rate from this assumed payout</span><strong>{numberText(breakEven, 2)}%</strong><small>Formula: 1 ÷ (1 + net payout multiple) · ignores fees and execution effects</small></div>}
