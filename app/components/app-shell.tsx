@@ -9,6 +9,7 @@ import {
   SlidersHorizontal, UserRound, Waypoints, Bot, X
 } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
+import { UserMenu } from "./user-menu";
 
 const groups = [
   { label: "Workspace", items: [
@@ -80,7 +81,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <span className="status off topbar-connection">Not connected</span>
             <ThemeToggle />
             <Link className="icon-action" href="/app/notifications" aria-label="Notifications"><Bell size={15}/></Link>
-            <Link className="profile-chip" href="/app/account"><span className="profile-chip-avatar"><UserRound size={14}/></span><span className="profile-chip-text">My account</span></Link>
+            <UserMenu />
           </div>
         </header>
         {children}
