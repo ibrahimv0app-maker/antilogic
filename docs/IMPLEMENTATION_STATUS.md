@@ -2,6 +2,8 @@
 
 Last updated: 2026-10-25
 
+The repository changes continue on `feat/anti-logic-v1-foundation`; the GitHub Actions checks on the latest branch revision still need to be rerun and reviewed before merge.
+
 This document describes actual code boundaries for the first implementation milestone. A page existing does not mean every integration behind it is complete.
 
 ## Public website
@@ -71,6 +73,8 @@ Implemented:
 - Win rate, net P/L, stake allocation, ROI, drawdown, and loss streak
 - Recent trade rows with a fixed-size buffer
 - Explicit assumptions and local CSV export
+- The signal condition is evaluated at a candle close and the simplified fill is the next candle close to avoid treating the same close as both signal and fill
+- Non-overlapping simulated positions and bounded storage of the latest 5,000 trade-detail rows
 - Unit tests for parsing, payout calculations, tie handling, and large-result truncation
 
 Important limits:
