@@ -36,9 +36,9 @@ export function MarketWorkspace() {
       <div className="card-heading"><h2>Market watch</h2><span className="status off"><WifiOff size={10}/> OFFLINE</span></div>
       <label className="market-search"><Search size={14}/><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search symbols…" aria-label="Search markets"/></label>
       <div className="market-list">
-        {results.map((item) => <button type="button" key={item.symbol} className={"market-item " + (item.symbol === symbol ? "selected" : "")} onClick={() => setSymbol(item.symbol)}>
-          <span className="market-item-symbol">{item.symbol}<small>{item.category}</small></span><span className="market-item-actions"><span className="market-offline-dot" title="No data source connected"/><span className="star-button" role="button" tabIndex={0} aria-label={(favorites.includes(item.symbol) ? "Remove " : "Add ") + item.symbol + " favorite"} onClick={(event) => { event.stopPropagation(); toggleFavorite(item.symbol); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); toggleFavorite(item.symbol); } }}>{favorites.includes(item.symbol) ? "★" : "☆"}</span></span>
-        </button>)}
+        {results.map((item) => <div key={item.symbol} className={"market-item " + (item.symbol === symbol ? "selected" : "")}>
+          <button type="button" className="market-select" onClick={() => setSymbol(item.symbol)}><span className="market-item-symbol">{item.symbol}<small>{item.category}</small></span></button><span className="market-item-actions"><span className="market-offline-dot" title="No data source connected"/><button type="button" className="star-button" aria-label={(favorites.includes(item.symbol) ? "Remove " : "Add ") + item.symbol + " favorite"} onClick={() => toggleFavorite(item.symbol)}>{favorites.includes(item.symbol) ? "★" : "☆"}</button></span>
+        </div>)}
       </div>
       <div className="field-hint" style={{marginTop:14}}>Symbols are examples only. Actual availability will be discovered through an authorized API connection.</div>
       <Link href="/app/account/deriv" className="btn" style={{width:"100%",marginTop:14}}>Connect Deriv <ArrowUpRight size={13}/></Link>
