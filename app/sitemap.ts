@@ -12,6 +12,7 @@ function getSiteUrl(): string | null {
 }
 
 export default function sitemap(): MetadataRoute.Sitemap {
+  if (process.env.VERCEL_ENV === "preview") return [];
   const siteUrl = getSiteUrl();
   if (!siteUrl) return [];
 
