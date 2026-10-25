@@ -74,6 +74,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return {
     title,
     description,
-    robots: key.startsWith("legal/") ? { index: false, follow: true } : { index: true, follow: true },
+    robots: process.env.VERCEL_ENV === "preview" ? { index: false, follow: false } : key.startsWith("legal/") ? { index: false, follow: true } : { index: true, follow: true },
   };
 }
