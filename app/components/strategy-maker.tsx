@@ -12,6 +12,8 @@ const initialRule = (): Rule => ({ id: 1, indicator: "RSI", operator: "below", t
 
 export function StrategyMaker() {
   const [draftId, setDraftId] = useState<string | null>(null);
+  const [currentVersion, setCurrentVersion] = useState(1);
+  const [remoteDraft, setRemoteDraft] = useState(false);
   const [name, setName] = useState("My first strategy");
   const [symbol, setSymbol] = useState("R_100");
   const [contractType, setContractType] = useState<"CALL" | "PUT">("CALL");
@@ -36,11 +38,13 @@ export function StrategyMaker() {
         if (supabase) {
           const { data: { user } } = await supabase.auth.getUser();
           if (user) {
-            const { data, error } = await supabase.from("strategies").select("id,name,symbol,contract_type,configuration,updated_at").eq("id", selected).eq("user_id", user.id).maybeSingle();
+            const { data, error } = await supabase.from("strategies").select("id,name,symbol,contract_type,configuration,updated_at,current_version").eq("id", selected).eq("user_id", user.id).maybeSingle();
             if (error) throw new Error("Could not load that account strategy. Confirm the database migration and permissions.");
             if (data && !cancelled) {
               const config = (data.configuration || {}) as Record<string, unknown>;
               setDraftId(data.id);
+              setCurrentVersion(Number(data.current_version || 1));
+              setRemoteDraft(true);
               setName(data.name);
               setSymbol(data.symbol);
               setContractType(data.contract_type === "PUT" ? "PUT" : "CALL");
@@ -57,6 +61,8 @@ export function StrategyMaker() {
         const found = local.find((item) => item.id === selected || item.name === selected);
         if (found && !cancelled) {
           setDraftId(found.id || null);
+          setCurrentVersion(1);
+          setRemoteDraft(false);
           setName(found.name);
           setSymbol(found.symbol);
           setContractType(found.contractType);
@@ -97,7 +103,9 @@ export function StrategyMaker() {
     if (!validate()) return;
     setSaving(true);
     setMessage("");
-    const id = draftId || createClientUuid();
+    const isUuid = (value: string | null): value is string => Boolean(value && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value));
+    const id = configured && draftId && !isUuid(draftId) ? createClientUuid() : draftId || createClientUuid();
+    const nextVersion = configured && remoteDraft && draftId === id ? currentVersion + 1 : 1;
     const draft: Draft = { id, name: name.trim(), symbol, contractType, duration, stake, rules, savedAt: new Date().toISOString() };
     try {
       const supabase = createClient();
@@ -113,12 +121,21 @@ export function StrategyMaker() {
           contract_type: contractType,
           configuration: { duration_seconds: Number(duration), stake: Number(stake), rules: rules.map(({ indicator, operator, threshold }) => ({ indicator, operator, threshold: Number(threshold) })) },
           status: "draft",
-          current_version: 1,
+          current_version: nextVersion,
           updated_at: new Date().toISOString(),
         }, { onConflict: "id" });
         if (error) throw new Error("Account save failed. Confirm the dedicated Anti Logic migration and row-level-security permissions.");
+        const { error: versionError } = await supabase.from("strategy_versions").insert({
+          strategy_id: id,
+          user_id: user.id,
+          version: nextVersion,
+          configuration: { name: draft.name, symbol, contract_type: contractType, duration_seconds: Number(duration), stake: Number(stake), rules: rules.map(({ indicator, operator, threshold }) => ({ indicator, operator, threshold: Number(threshold) })) },
+        });
         setDraftId(id);
-        setMessage("Strategy draft saved to your Anti Logic account. It is not validated or executable.");
+        setCurrentVersion(nextVersion);
+        setRemoteDraft(true);
+        if (versionError) setMessage("Strategy draft saved, but the version snapshot could not be recorded. Check strategy_versions permissions.");
+        else setMessage("Strategy draft saved to your Anti Logic account as version " + nextVersion + ". It is not validated or executable.");
       } else {
         const old = JSON.parse(window.localStorage.getItem(KEY) || "[]") as Draft[];
         const next = [draft, ...old.filter((item) => item.id !== id)].slice(0, 20);
