@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AudioWaveform, Bell, BookOpen, ChartCandlestick, CircleHelp, Cog, ExternalLink, FlaskConical, ListChecks, ShieldCheck, SlidersHorizontal, UserRound, Waypoints, Bot, Activity, Cable } from "lucide-react";
+import { AudioWaveform, Bell, ChartCandlestick, CircleHelp, Cog, ExternalLink, FlaskConical, ListChecks, ShieldCheck, SlidersHorizontal, UserRound, Waypoints, Bot, Activity, Cable } from "lucide-react";
 import { StrategyMaker } from "@/app/components/strategy-maker";
 import { StrategyLibrary } from "@/app/components/strategy-library";
 import { BacktestPlanner } from "@/app/components/backtest-planner";
