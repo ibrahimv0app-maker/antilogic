@@ -11,6 +11,8 @@ import { RiskPreferences } from "@/app/components/risk-preferences";
 import { MarketWorkspace } from "@/app/components/market-workspace";
 import { AIAnalysisPanel } from "@/app/components/ai-analysis-panel";
 import { TradeHistoryPanel } from "@/app/components/trade-history-panel";
+import { GeneralPreferences } from "@/app/components/general-preferences";
+import { NotificationPreferences } from "@/app/components/notification-preferences";
 
 type Page = { title: string; description: string; items: string[]; notice: string };
 const pages: Record<string, Page> = {
@@ -80,6 +82,12 @@ export default async function WorkspacePage({ params }: { params: Promise<{ slug
   }
   if (key === "integrations/telegram") {
     return <main className="app-content"><PageHeading title="Telegram alerts" description="Configure your future alert preferences without exposing bot credentials."/><TelegramPreferences /></main>;
+  }
+  if (key === "settings/general") {
+    return <main className="app-content"><PageHeading title="General settings" description="Personalize your workspace preferences and default research context."/><GeneralPreferences /></main>;
+  }
+  if (key === "settings/notifications" || key === "notifications") {
+    return <main className="app-content"><PageHeading title="Notification preferences" description="Choose which application events and delivery channels you want to use."/><NotificationPreferences /></main>;
   }
   if (key === "settings/risk") {
     return <main className="app-content"><PageHeading title="Risk controls" description="Prepare conservative risk preferences for future server-side enforcement."/><RiskPreferences /></main>;
