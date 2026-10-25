@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, BookOpen, ShieldCheck } from "lucide-react";
@@ -57,4 +58,17 @@ export default async function PublicPage({ params }: { params: Promise<{ slug: s
     {key.startsWith("legal/") && <div className="notice legal-notice"><ShieldCheck size={15}/> Draft content — review for the applicable business and jurisdictions before public release.</div>}{key === "legal/cookies" && <div style={{marginTop:16}}><CookiePreferencesButton /></div>}
     <Link href={key.startsWith("blog/") ? "/blog" : "/"} className="btn" style={{marginTop:24}}>{key.startsWith("blog/") ? "← Back to research" : "← Back home"}</Link>
   </main></>;
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string[] }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const key = slug.join("/");
+  const article = key.startsWith("blog/") ? articles.find((item) => item.slug === key.slice("blog/".length)) : undefined;
+  const title = key === "blog" ? "Research library" : article?.title || pages[key]?.title || "Anti Logic";
+  const description = article?.summary || pages[key]?.description || "Anti Logic — binary trading research and risk-aware automation.";
+  return {
+    title,
+    description,
+    robots: key.startsWith("legal/") ? { index: false, follow: true } : { index: true, follow: true },
+  };
 }
