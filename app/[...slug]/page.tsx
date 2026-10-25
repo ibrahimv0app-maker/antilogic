@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowRight, BookOpen, ShieldCheck } from "lucide-react";
+import { ArrowRight, ShieldCheck } from "lucide-react";
 import { PublicHeader } from "@/app/components/public-header";
 import { SystemStatusPanel } from "@/app/components/system-status-panel";
 import { CookiePreferencesButton } from "@/app/components/cookie-consent";
