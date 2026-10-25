@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Activity, ArrowUpRight, ChartCandlestick, CircleHelp, Clock3,
   RefreshCw, Search, SlidersHorizontal, Star, Wifi, WifiOff
@@ -75,7 +75,7 @@ export function MarketWorkspace() {
   const [pipSize, setPipSize] = useState(5);
   const [lastQuote, setLastQuote] = useState<number | null>(null);
   const [recentRetries, setRecentRetries] = useState(0);
-  const socketRef = useRef<WebSocket | null>(null);
+  const [refreshGeneration, setRefreshGeneration] = useState(0);
 
   const selected = symbols.find((item) => item.symbol === symbol) || FALLBACK_SYMBOLS.find((item) => item.symbol === symbol) || { symbol, name: symbol, category: "Market" };
   const results = useMemo(() => {
@@ -276,7 +276,6 @@ export function MarketWorkspace() {
       if (disposed) return;
       try {
         socket = new WebSocket(PUBLIC_WS_URL);
-        socketRef.current = socket;
       } catch {
         setConnection("error");
         setConnectionError("Your browser could not create a public WebSocket connection.");
@@ -333,9 +332,8 @@ export function MarketWorkspace() {
         }
       }
       if (current && current.readyState < WebSocket.CLOSING) current.close(1000, "Market workspace changed");
-      if (socketRef.current === current) socketRef.current = null;
     };
-  }, [symbol, timeframeSeconds]);
+  }, [symbol, timeframeSeconds, refreshGeneration]);
 
   const statusCopy: Record<ConnectionState, string> = {
     connecting: "Connecting…",
@@ -366,7 +364,7 @@ export function MarketWorkspace() {
           <div><div className="market-symbol-heading"><h2>{selected.symbol}</h2><span className="status">{selected.category}</span></div><p className="muted">{selected.name}</p>
             <div className="market-current-quote">{lastQuote === null ? <span className="muted">Waiting for first quote…</span> : <><strong>{formatPrice(lastQuote, pipSize)}</strong>{candleChange !== null && <span className={candleChange > 0 ? "positive" : candleChange < 0 ? "negative" : "muted"}>{candleChange > 0 ? "+" : ""}{formatPrice(candleChange, pipSize)}{candleChangePercent !== null ? " (" + (candleChangePercent > 0 ? "+" : "") + candleChangePercent.toFixed(3) + "%)" : ""}</span>}</>}</div>
           </div>
-          <div className="market-actions"><span className={"status " + (connection === "connected" ? "demo" : "off")}>{statusIcon} {statusCopy[connection]}</span><button className="icon-action" onClick={() => { setConnection("connecting"); setConnectionError(""); setSymbol((old) => old); socketRef.current?.close(); }} title="Restart market feed" aria-label="Restart market feed"><RefreshCw size={14}/></button></div>
+          <div className="market-actions"><span className={"status " + (connection === "connected" ? "demo" : "off")}>{statusIcon} {statusCopy[connection]}</span><button className="icon-action" onClick={() => setRefreshGeneration((generation) => generation + 1)} title="Restart market feed" aria-label="Restart market feed"><RefreshCw size={14}/></button></div>
         </div>
         <div className="market-tools"><div className="segmented-tabs" role="group" aria-label="Candle timeframe">{TIMEFRAMES.map((item)=><button key={item.label} className={timeframeSeconds === item.seconds ? "selected" : ""} onClick={() => setTimeframeSeconds(item.seconds)}>{item.label}</button>)}</div><button className="btn" onClick={() => toggleIndicator("Moving average")}><SlidersHorizontal size={13}/> {enabledIndicators.includes("Moving average") ? "Hide MA overlay" : "Show MA overlay"}</button></div>
         <div className={"chart-disclaimer " + (connection === "connected" ? "chart-live-note" : "")}><CircleHelp size={14}/>{connection === "connected" ? "Live public market data · Read-only feed · No account or trading actions are available here." : candles.length || liveTicks.length ? "Connection is " + statusCopy[connection].toLowerCase() + ". The chart shows the last received market data and may be stale." : "Waiting for the public feed. Chart data is not substituted with illustrative prices."}</div>
