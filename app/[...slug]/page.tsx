@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, BookOpen, ShieldCheck } from "lucide-react";
 import { PublicHeader } from "@/app/components/public-header";
+import { CookiePreferencesButton } from "@/app/components/cookie-consent";
 
 type Section = { heading: string; body: string };
 type PublicPage = { title: string; description: string; sections: Section[] };
@@ -53,7 +54,7 @@ export default async function PublicPage({ params }: { params: Promise<{ slug: s
     <h1 className="section-title">{data.title}</h1>
     <p className="muted public-lead">{data.description}</p>
     <div className="public-sections">{data.sections.map((section) => <section key={section.heading} className="panel card-pad"><h2>{section.heading}</h2><p className="muted">{section.body}</p></section>)}</div>
-    {key.startsWith("legal/") && <div className="notice legal-notice"><ShieldCheck size={15}/> Draft content — review for the applicable business and jurisdictions before public release.</div>}
+    {key.startsWith("legal/") && <div className="notice legal-notice"><ShieldCheck size={15}/> Draft content — review for the applicable business and jurisdictions before public release.</div>}{key === "legal/cookies" && <div style={{marginTop:16}}><CookiePreferencesButton /></div>}
     <Link href={key.startsWith("blog/") ? "/blog" : "/"} className="btn" style={{marginTop:24}}>{key.startsWith("blog/") ? "← Back to research" : "← Back home"}</Link>
   </main></>;
 }
