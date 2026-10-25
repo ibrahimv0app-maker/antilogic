@@ -4,10 +4,10 @@
 
 ## Environment variables
 Set these in Vercel and local .env.local:
-- NEXT_PUBLIC_SUPABASE_URL
-- NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+- NEXT_PUBLIC_ANTI_LOGIC_SUPABASE_URL
+- NEXT_PUBLIC_ANTI_LOGIC_SUPABASE_PUBLISHABLE_KEY
 
-The application also accepts NEXT_PUBLIC_SUPABASE_ANON_KEY for compatibility. Prefer a publishable key for new projects. Never expose a Supabase service-role or secret key in client code.
+Never expose a Supabase service-role or secret key in client code.
 
 ## Apply the schema
 After verifying that the Supabase dashboard points to the dedicated Anti Logic project, apply migrations/20261025000100_anti_logic_base.sql through your migration workflow or SQL editor.
