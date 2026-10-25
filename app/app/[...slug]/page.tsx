@@ -8,6 +8,9 @@ import { BacktestPlanner } from "@/app/components/backtest-planner";
 import { ProfilePreferences } from "@/app/components/profile-preferences";
 import { TelegramPreferences } from "@/app/components/telegram-preferences";
 import { RiskPreferences } from "@/app/components/risk-preferences";
+import { MarketWorkspace } from "@/app/components/market-workspace";
+import { AIAnalysisPanel } from "@/app/components/ai-analysis-panel";
+import { TradeHistoryPanel } from "@/app/components/trade-history-panel";
 
 type Page = { title: string; description: string; items: string[]; notice: string };
 const pages: Record<string, Page> = {
@@ -54,6 +57,15 @@ function PageHeading({ title, description }: { title: string; description: strin
 export default async function WorkspacePage({ params }: { params: Promise<{ slug: string[] }> }) {
   const { slug } = await params;
   const key = slug.join("/");
+  if (key === "charts") {
+    return <main className="app-content"><PageHeading title="Charts & markets" description="Choose a symbol, organize your watchlist, and prepare the workspace for an authorized data stream."/><MarketWorkspace /></main>;
+  }
+  if (key === "ai-analysis") {
+    return <main className="app-content"><PageHeading title="AI analysis" description="Configure an analysis request without fabricating signals or market predictions."/><AIAnalysisPanel /></main>;
+  }
+  if (key === "history") {
+    return <main className="app-content"><PageHeading title="Trade history" description="Only confirmed records from an authorized source should appear in this workspace."/><TradeHistoryPanel /></main>;
+  }
   if (key === "strategies" ) {
     return <main className="app-content"><PageHeading title="Strategies" description="Create and manage your strategy drafts in one place."/><StrategyLibrary /></main>;
   }
