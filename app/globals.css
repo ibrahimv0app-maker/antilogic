@@ -59,3 +59,8 @@
 :root[data-theme="light"] .csv-dropzone{background:#f8fbf2;border-color:#a8b99a}
 @media(max-width:1050px){.backtest-layout{grid-template-columns:1fr}.backtest-metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:700px){.backtest-layout{gap:10px}.backtest-metric-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.backtest-metric-grid .metric{padding:11px}.backtest-metric-grid .metric-value{font-size:17px}.backtest-metric-grid .metric-label{font-size:10px}.selected-strategy-summary{align-items:flex-start}}
+
+
+/* Public service configuration status */
+.system-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:2px 0 14px}.system-status-row{align-items:flex-start}.system-status-main{display:flex;align-items:flex-start;gap:11px;min-width:0}.system-status-main>div{min-width:0}.system-status-main strong{font-size:11px}.system-status-main p{font-size:10px;line-height:1.7;max-width:570px;margin:5px 0 0}.system-status-icon{display:grid;place-items:center;width:31px;height:31px;flex:none;border-radius:9px;border:1px solid var(--border);background:var(--bg);color:var(--muted)}.system-status-icon.ok{border-color:#5a6a3d;background:#c6f36a0b;color:var(--lime)}.system-status-icon.pending{border-color:#59492d;background:#211b12;color:#d9bd8b}
+:root[data-theme="light"] .system-status-icon.pending{background:#fbf7e9}
