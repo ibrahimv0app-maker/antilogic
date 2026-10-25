@@ -35,7 +35,9 @@ export function GeneralPreferences() {
         } else {
           const { data: profile } = await supabase.from("profiles").select("time_zone").eq("id", user.id).maybeSingle();
           setPrefs({ theme: data?.theme === "light" || data?.theme === "system" ? data.theme : "dark", symbol: data?.preferred_symbol || "R_100", timeZone: profile?.time_zone || "Asia/Karachi" });
-          if (data?.theme && data.theme !== "system") document.documentElement.dataset.theme = data.theme;
+          const currentTheme = data?.theme === "light" ? "light" : "dark";
+          document.documentElement.dataset.theme = currentTheme;
+          try { window.localStorage.setItem("anti-logic:theme:v1", currentTheme); } catch {}
           setSaved(false);
         }
       } else {
@@ -69,8 +71,9 @@ export function GeneralPreferences() {
         window.localStorage.setItem(KEY, JSON.stringify(prefs));
         setMessage("Preferences saved on this device only.");
       }
-      if (prefs.theme !== "system") document.documentElement.dataset.theme = prefs.theme;
-      else document.documentElement.dataset.theme = "dark";
+      const activeTheme = prefs.theme === "light" ? "light" : "dark";
+      document.documentElement.dataset.theme = activeTheme;
+      try { window.localStorage.setItem("anti-logic:theme:v1", activeTheme); } catch {}
       setSaved(true);
     } catch (caught) {
       setMessage(caught instanceof Error ? caught.message : "Preferences could not be saved.");
