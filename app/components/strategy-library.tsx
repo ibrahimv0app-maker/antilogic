@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Copy, Plus, Trash2, Waypoints } from "lucide-react";
 import { createClient, isSupabaseBrowserConfigured } from "@/lib/supabase/client";
+import { createClientUuid } from "@/lib/client-uuid";
 
 const KEY = "anti-logic:strategy-drafts:v1";
 type SavedRule = { id: number; indicator: string; operator: string; threshold: string };
@@ -88,7 +89,7 @@ export function StrategyLibrary() {
   }
 
   async function duplicateDraft(draft: Draft) {
-    const id = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : "draft-" + Date.now();
+    const id = createClientUuid();
     const copy: Draft = { ...draft, id, name: draft.name + " copy", savedAt: new Date().toISOString() };
     if (cloud) {
       const supabase = createClient();
