@@ -158,10 +158,33 @@ export function MarketWorkspace() {
       const last = incoming[incoming.length - 1];
       setLastQuote(last.close);
       setLastTickAt(Date.now());
+      setConnectionError("");
       receivedMarketData = true;
       reconnectAttempt = 0;
       setRecentRetries(0);
       setConnection("connected");
+    }
+
+    function updateFromLiveTick(epoch: number, quote: number) {
+      const bucketEpoch = Math.floor(epoch / timeframeSeconds) * timeframeSeconds;
+      setCandles((current) => {
+        if (!current.length) return [{ epoch: bucketEpoch, open: quote, high: quote, low: quote, close: quote }];
+        const last = current[current.length - 1];
+        if (last.epoch === bucketEpoch) {
+          const next = current.slice();
+          next[next.length - 1] = {
+            ...last,
+            high: Math.max(last.high, quote),
+            low: Math.min(last.low, quote),
+            close: quote,
+          };
+          return next;
+        }
+        if (last.epoch < bucketEpoch) {
+          return [...current, { epoch: bucketEpoch, open: quote, high: quote, low: quote, close: quote }].slice(-120);
+        }
+        return current;
+      });
     }
 
     function handleMessage(event: MessageEvent<string>) {
@@ -230,6 +253,8 @@ export function MarketWorkspace() {
         const epoch = Number(tick.epoch);
         if (Number.isFinite(quote) && Number.isFinite(epoch)) {
           setLastQuote(quote);
+          updateFromLiveTick(epoch, quote);
+          setConnectionError("");
           setLiveTicks((old) => {
             const next = [...old, { epoch, quote }].slice(-200);
             return next;
@@ -344,7 +369,7 @@ export function MarketWorkspace() {
           <div className="market-actions"><span className={"status " + (connection === "connected" ? "demo" : "off")}>{statusIcon} {statusCopy[connection]}</span><button className="icon-action" onClick={() => { setConnection("connecting"); setConnectionError(""); setSymbol((old) => old); socketRef.current?.close(); }} title="Restart market feed" aria-label="Restart market feed"><RefreshCw size={14}/></button></div>
         </div>
         <div className="market-tools"><div className="segmented-tabs" role="group" aria-label="Candle timeframe">{TIMEFRAMES.map((item)=><button key={item.label} className={timeframeSeconds === item.seconds ? "selected" : ""} onClick={() => setTimeframeSeconds(item.seconds)}>{item.label}</button>)}</div><button className="btn" onClick={() => toggleIndicator("Moving average")}><SlidersHorizontal size={13}/> {enabledIndicators.includes("Moving average") ? "Hide MA overlay" : "Show MA overlay"}</button></div>
-        <div className={"chart-disclaimer " + (connection === "connected" ? "chart-live-note" : "")}><CircleHelp size={14}/>{connection === "connected" ? "Live public market data · Read-only feed · No account or trading actions are available here." : "Waiting for the public feed. Chart data is not substituted with illustrative prices."}</div>
+        <div className={"chart-disclaimer " + (connection === "connected" ? "chart-live-note" : "")}><CircleHelp size={14}/>{connection === "connected" ? "Live public market data · Read-only feed · No account or trading actions are available here." : candles.length || liveTicks.length ? "Connection is " + statusCopy[connection].toLowerCase() + ". The chart shows the last received market data and may be stale." : "Waiting for the public feed. Chart data is not substituted with illustrative prices."}</div>
         <div className="chart-drawing" role="img" aria-label={candles.length ? "Real public market candle-close price chart" : "Market chart waiting for real data"}>
           {candles.length >= 2 ? <>
             <div className="chart-y-labels"><span>{formatPrice(maximumPrice, pipSize)}</span><span>{formatPrice((maximumPrice + minimumPrice) / 2, pipSize)}</span><span>{formatPrice(minimumPrice, pipSize)}</span></div>
