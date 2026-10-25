@@ -244,7 +244,6 @@ export function runBinaryBacktest(candles: Candle[], options: BacktestOptions): 
       result = "draw";
       pnl = options.tieHandling === "loss" ? -options.stake : 0;
       if (options.tieHandling === "loss") {
-        losses += 1;
         currentLossStreak += 1;
       } else {
         currentLossStreak = 0;
@@ -305,7 +304,7 @@ export function runBinaryBacktest(candles: Candle[], options: BacktestOptions): 
       "Only one hypothetical position is open at a time; the next entry is considered after the previous simulated expiry.",
       "RSI uses a simple 14-change average, moving-average spread uses close minus the 14-bar simple moving average, and momentum is the 5-bar percentage change.",
       "A win earns the configured net payout multiple; a loss loses the full stake.",
-      options.tieHandling === "loss" ? "Equal entry and expiry prices are counted as losses." : "Equal entry and expiry prices are treated as break-even and excluded from win-rate denominator.",
+      options.tieHandling === "loss" ? "Equal entry and expiry prices count as a draw category, are charged as a full-stake loss in net P/L, and extend the loss streak." : "Equal entry and expiry prices are treated as break-even and excluded from win-rate denominator.",
       "Ignores execution latency, proposal changes, spread, fees, payout changes, and other contract-specific rules.",
       "This is a simplified research simulation, not a representation of actual Deriv contract execution.",
     ],
