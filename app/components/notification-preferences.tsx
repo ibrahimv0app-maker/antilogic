@@ -41,7 +41,16 @@ export function NotificationPreferences() {
         if (error) setMessage("Could not load preferences. Confirm the Anti Logic migration and row-level-security policy.");
         else {
           const raw = data?.notification_preferences && typeof data.notification_preferences === "object" ? data.notification_preferences as Record<string, unknown> : {};
-          setPrefs({ ...defaults, ...raw, ...((raw.alerts && typeof raw.alerts === "object") ? raw.alerts as Partial<Preferences> : {}) });
+          const nested = raw.alerts && typeof raw.alerts === "object" ? raw.alerts as Record<string, unknown> : {};
+          const merged = { ...raw, ...nested };
+          setPrefs({
+            in_app: typeof merged.in_app === "boolean" ? merged.in_app : defaults.in_app,
+            email: typeof merged.email === "boolean" ? merged.email : defaults.email,
+            telegram: typeof merged.telegram === "boolean" ? merged.telegram : defaults.telegram,
+            security: typeof merged.security === "boolean" ? merged.security : defaults.security,
+            risk_events: typeof merged.risk_events === "boolean" ? merged.risk_events : defaults.risk_events,
+            contract_results: typeof merged.contract_results === "boolean" ? merged.contract_results : defaults.contract_results,
+          });
         }
       } else {
         try {
