@@ -93,7 +93,7 @@ The chart reads public market data directly in the browser through the documente
 
 Reference the current official API documentation and terms before expanding the integration:
 - https://developers.deriv.com/docs/intro/api-overview/
-- https://developers.deriv.com/docs/options/ws-public/
+- https://developers.deriv.com/docs/options/websocket/
 - https://developers.deriv.com/docs/data/active-symbols/
 - https://developers.deriv.com/docs/data/ticks/
 - https://developers.deriv.com/docs/data/ticks-history/
