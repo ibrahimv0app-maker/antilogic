@@ -2,7 +2,7 @@
 
 Last updated: 2026-10-25
 
-The repository changes continue on `feat/anti-logic-v1-foundation`; the GitHub Actions checks on the latest branch revision still need to be rerun and reviewed before merge.
+The initial foundation was merged into `main` through PR #1. The backtest test expectations were then corrected on `main` in commit `33b833938c12c35983c164e9c8453bf1da2d4698`. The last PR-triggered CI run failed before that correction; a successful run for the new `main` commit has not yet been verified.
 
 This document describes actual code boundaries for the first implementation milestone. A page existing does not mean every integration behind it is complete.
 
@@ -56,7 +56,7 @@ Implemented in code:
 - No provider-originating market data is persisted to the Anti Logic database
 
 Not yet verified or implemented:
-- The WebSocket has not yet been end-to-end tested from a deployed browser in this environment
+- The WebSocket has not yet been end-to-end tested from the currently recorded production deployment
 - User account OAuth/authorization
 - Account balances or account-specific data
 - Binary contract proposals, buy/sell execution, or contract settlement
@@ -115,11 +115,12 @@ Never put a service-role key or other secret in a `NEXT_PUBLIC_*` variable.
 
 ## Vercel and verification
 
-- The repository is `ibrahimv0app-maker/antilogic`.
-- Work is on branch `feat/anti-logic-v1-foundation`.
-- The draft PR is intentionally not merged.
-- A Vercel project named `anti-logic` exists, but project inspection currently requires team-scope authorization. No deployment URL or production success is claimed in this status file.
-- GitHub Actions is configured for unit tests, lint, and build. Check the latest run before merging; do not assume a pass without a recorded successful run.
+- The repository is `ibrahimv0app-maker/antilogic`; the initial foundation PR #1 is merged to `main`.
+- GitHub Actions runs unit tests, lint, and build. The last PR-triggered run failed at the test step with two stale expectations; those expectations have since been updated on `main`. A successful run for the updated commit is not yet verified by the currently available PR-run/status view.
+- A Vercel project named `anti-logic` exists. The latest deployment record is marked `READY`, but it was created before the foundation merge and was made via the Vercel CLI. It has not been verified as containing the latest `main` commit.
+- Vercel project metadata reports SSO protection for non-custom domains, so public reachability still needs to be confirmed.
+- The current Vercel environment listing contains legacy generic variables `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`; the application code uses `NEXT_PUBLIC_ANTI_LOGIC_SUPABASE_URL` and `NEXT_PUBLIC_ANTI_LOGIC_SUPABASE_PUBLISHABLE_KEY`. The correctly namespaced Anti Logic pair has not been confirmed as configured.
+- `npm install` reported 5 dependency vulnerabilities (2 moderate, 1 high, 2 critical). Review the full `npm audit` advisories and apply targeted upgrades before launch.
 
 ## Run locally
 
