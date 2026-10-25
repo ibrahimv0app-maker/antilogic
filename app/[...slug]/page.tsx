@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, BookOpen, ShieldCheck } from "lucide-react";
 import { PublicHeader } from "@/app/components/public-header";
+import { SystemStatusPanel } from "@/app/components/system-status-panel";
 import { CookiePreferencesButton } from "@/app/components/cookie-consent";
 
 type Section = { heading: string; body: string };
@@ -37,6 +38,10 @@ const pages: Record<string, PublicPage> = {
 
 export default async function PublicPage({ params }: { params: Promise<{ slug: string[] }> }) {
   const { slug } = await params;
+  const routeKey = slug.join("/");
+  if (routeKey === "status") {
+    return <><PublicHeader /><main className="container public-content"><div className="eyebrow">Anti Logic / Operations</div><h1 className="section-title">System status</h1><p className="muted" style={{maxWidth:700,lineHeight:1.8}}>Review Anti Logic application configuration and known integration boundaries. This is not a third-party uptime guarantee.</p><div style={{marginTop:24}}><SystemStatusPanel /></div></main></>;
+  }
   const key = slug.join("/");
   if (key === "blog") {
     return <><PublicHeader /><main className="container public-content">
