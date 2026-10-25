@@ -192,6 +192,53 @@ export function BacktestPlanner() {
     }
   }
 
+  function exportReport() {
+    if (!result) return;
+    const escapeCell = (value: string | number | boolean) => {
+      const raw = String(value);
+      return /[",\r\n]/.test(raw) ? '"' + raw.replace(/"/g, '""') + '"' : raw;
+    };
+    const summaryRows: Array<Array<string | number | boolean>> = [
+      ["Anti Logic simulated backtest report"],
+      ["exported_at", new Date().toISOString()],
+      ["data_source", "User-provided CSV processed in browser"],
+      ["strategy", selectedStrategy?.name || "Unknown"],
+      ["symbol", selectedStrategy?.symbol || "Unknown"],
+      ["direction", direction],
+      ["expiry_bars", durationBars],
+      ["stake_units", stake],
+      ["assumed_net_payout_multiple", payout],
+      ["ties", tieHandling],
+      ["total_trades", result.totalTrades],
+      ["wins", result.wins],
+      ["losses", result.losses],
+      ["draws", result.draws],
+      ["win_rate_percent", result.winRate === null ? "N/A" : result.winRate],
+      ["net_profit_loss_units", result.netProfitLoss],
+      ["total_staked_units", result.totalStaked],
+      ["roi_percent", result.roiPercent === null ? "N/A" : result.roiPercent],
+      ["max_drawdown_units", result.maxDrawdown],
+      ["max_consecutive_losses", result.maxConsecutiveLosses],
+      ["trade_rows_exported", result.trades.length],
+      ["trade_rows_truncated", result.tradesTruncated],
+      ["assumptions"],
+      ...result.assumptions.map((assumption) => [assumption]),
+      [],
+      ["entry_timestamp", "exit_timestamp", "direction", "entry_close", "expiry_close", "result", "net_pl_units"],
+      ...result.trades.map((trade) => [new Date(trade.entryTimestamp).toISOString(), new Date(trade.exitTimestamp).toISOString(), trade.direction, trade.entryPrice, trade.exitPrice, trade.result, trade.netProfitLoss]),
+    ];
+    const csv = summaryRows.map((row) => row.map(escapeCell).join(",")).join("\r\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "anti-logic-backtest-" + new Date().toISOString().slice(0, 10) + ".csv";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
   const recentTrades = useMemo(() => result ? result.trades.slice(-20).reverse() : [], [result]);
 
   return <div className="backtest-workspace">
@@ -215,7 +262,7 @@ export function BacktestPlanner() {
     </div>
     {result && <>
       <section className="panel card-pad backtest-result-panel">
-        <div className="card-heading"><div><h2>Simulation report</h2><p className="muted" style={{fontSize:11,margin:"6px 0 0"}}>Computed in this browser from the selected CSV.</p></div><span className="status demo">SIMULATED</span></div>
+        <div className="card-heading"><div><h2>Simulation report</h2><p className="muted" style={{fontSize:11,margin:"6px 0 0"}}>Computed in this browser from the selected CSV.</p></div><div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}><span className="status demo">SIMULATED</span><button className="btn" onClick={exportReport}><Download size={13}/> Export report</button></div></div>
         <div className="backtest-metric-grid">
           <div className="metric panel"><div className="metric-label">Matched trades</div><div className="metric-value">{result.totalTrades.toLocaleString()}</div><div className="metric-foot">Signal conditions matched</div></div>
           <div className="metric panel"><div className="metric-label">Win rate</div><div className="metric-value">{result.winRate === null ? "—" : numberText(result.winRate) + "%"}</div><div className="metric-foot">{result.wins} wins / {result.evaluatedTrades} evaluated</div></div>
