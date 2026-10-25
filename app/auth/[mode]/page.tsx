@@ -13,7 +13,7 @@ export async function generateMetadata({ params }: { params: Promise<{ mode: str
     "reset-password": "Reset password",
     "verify-email": "Verify email",
   };
-  return { title: titles[mode] || "Account access" };
+  return { title: titles[mode] || "Account access", robots: { index: false, follow: false } };
 }
 
 export default async function AuthPage({ params }: { params: Promise<{ mode: string }> }) {
