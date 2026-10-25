@@ -268,20 +268,27 @@ export function runBinaryBacktest(candles: Candle[], options: BacktestOptions): 
     maxDrawdown = Math.max(maxDrawdown, peakEquity - equity);
     tradeCount += 1;
 
+    const recordedTrade: BacktestTrade = {
+      entryTimestamp: candles[index].timestamp,
+      exitTimestamp: candles[exitIndex].timestamp,
+      entryPrice,
+      exitPrice,
+      direction: options.direction,
+      result,
+      netProfitLoss: pnl,
+    };
     if (trades.length < MAX_RESULT_TRADES) {
-      trades.push({
-        entryTimestamp: candles[index].timestamp,
-        exitTimestamp: candles[exitIndex].timestamp,
-        entryPrice,
-        exitPrice,
-        direction: options.direction,
-        result,
-        netProfitLoss: pnl,
-      });
+      trades.push(recordedTrade);
+    } else {
+      // Keep a fixed-size circular buffer so large CSVs retain the latest detail rows.
+      trades[tradeCount % MAX_RESULT_TRADES] = recordedTrade;
     }
   }
 
   const evaluatedTrades = options.tieHandling === "break_even" ? wins + losses : tradeCount;
+  const retainedTrades = tradeCount > MAX_RESULT_TRADES
+    ? [...trades.slice(tradeCount % MAX_RESULT_TRADES), ...trades.slice(0, tradeCount % MAX_RESULT_TRADES)]
+    : trades;
   return {
     candleCount: candles.length,
     totalTrades: tradeCount,
@@ -296,7 +303,7 @@ export function runBinaryBacktest(candles: Candle[], options: BacktestOptions): 
     expectedProfitPerTrade: tradeCount ? netProfitLoss / tradeCount : null,
     maxConsecutiveLosses,
     maxDrawdown,
-    trades,
+    trades: retainedTrades,
     tradesTruncated: tradeCount > MAX_RESULT_TRADES,
     assumptions: [
       "Uses only the user-selected CSV in this browser; the file is not uploaded or stored by Anti Logic.",
