@@ -19,6 +19,7 @@ create table if not exists public.user_preferences (
   preferred_symbol text,
   default_account_mode text not null default 'demo' check (default_account_mode in ('demo','live')),
   notification_preferences jsonb not null default '{"in_app":true,"email":false,"telegram":false}'::jsonb,
+  risk_preferences jsonb not null default '{"max_stake":1,"daily_loss_limit":10,"max_open_contracts":1,"cooldown_minutes":10}'::jsonb check (jsonb_typeof(risk_preferences) = 'object'),
   updated_at timestamptz not null default now()
 );
 
