@@ -72,6 +72,7 @@ export function MarketWorkspace() {
   const [connection, setConnection] = useState<ConnectionState>("connecting");
   const [connectionError, setConnectionError] = useState("");
   const [lastTickAt, setLastTickAt] = useState<number | null>(null);
+  const [feedStale, setFeedStale] = useState(false);
   const [pipSize, setPipSize] = useState(5);
   const [lastQuote, setLastQuote] = useState<number | null>(null);
   const [recentRetries, setRecentRetries] = useState(0);
@@ -128,6 +129,15 @@ export function MarketWorkspace() {
       if (Array.isArray(saved)) setFavorites(saved.filter((item): item is string => typeof item === "string"));
     } catch {}
   }, []);
+
+  useEffect(() => {
+    setFeedStale(false);
+    if (lastTickAt === null) return;
+    const timer = window.setTimeout(() => {
+      setFeedStale(Date.now() - lastTickAt >= 15_000);
+    }, 15_000);
+    return () => window.clearTimeout(timer);
+  }, [lastTickAt]);
 
   useEffect(() => {
     let disposed = false;
@@ -342,11 +352,12 @@ export function MarketWorkspace() {
     offline: "Offline",
     error: "Feed error",
   };
-  const statusIcon = connection === "connected" ? <Wifi size={11}/> : <WifiOff size={11}/>;
+  const statusIcon = connection === "connected" && !feedStale ? <Wifi size={11}/> : <WifiOff size={11}/>;
+  const displayedStatus = feedStale && connection === "connected" ? "Data stale" : statusCopy[connection];
 
   return <div className="market-layout">
     <aside className="panel market-watchlist">
-      <div className="card-heading"><h2>Market watch</h2><span className={"status " + (connection === "connected" ? "demo" : "off")}>{statusIcon} {connection === "connected" ? "LIVE" : connection === "connecting" || connection === "reconnecting" ? "WAITING" : "OFFLINE"}</span></div>
+      <div className="card-heading"><h2>Market watch</h2><span className={"status " + (connection === "connected" && !feedStale ? "demo" : "off")}>{statusIcon} {connection === "connected" && !feedStale ? "LIVE" : feedStale ? "STALE" : connection === "connecting" || connection === "reconnecting" ? "WAITING" : "OFFLINE"}</span></div>
       <label className="market-search"><Search size={14}/><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search symbols…" aria-label="Search markets"/></label>
       <div className="market-list">
         {results.map((item) => <div key={item.symbol} className={"market-item " + (item.symbol === symbol ? "selected" : "")}>
@@ -367,7 +378,7 @@ export function MarketWorkspace() {
           <div className="market-actions"><span className={"status " + (connection === "connected" ? "demo" : "off")}>{statusIcon} {statusCopy[connection]}</span><button className="icon-action" onClick={() => setRefreshGeneration((generation) => generation + 1)} title="Restart market feed" aria-label="Restart market feed"><RefreshCw size={14}/></button></div>
         </div>
         <div className="market-tools"><div className="segmented-tabs" role="group" aria-label="Candle timeframe">{TIMEFRAMES.map((item)=><button key={item.label} className={timeframeSeconds === item.seconds ? "selected" : ""} onClick={() => setTimeframeSeconds(item.seconds)}>{item.label}</button>)}</div><button className="btn" onClick={() => toggleIndicator("Moving average")}><SlidersHorizontal size={13}/> {enabledIndicators.includes("Moving average") ? "Hide MA overlay" : "Show MA overlay"}</button></div>
-        <div className={"chart-disclaimer " + (connection === "connected" ? "chart-live-note" : "")}><CircleHelp size={14}/>{connection === "connected" ? "Live public market data · Read-only feed · No account or trading actions are available here." : candles.length || liveTicks.length ? "Connection is " + statusCopy[connection].toLowerCase() + ". The chart shows the last received market data and may be stale." : "Waiting for the public feed. Chart data is not substituted with illustrative prices."}</div>
+        <div className={"chart-disclaimer " + (connection === "connected" && !feedStale ? "chart-live-note" : "")}><CircleHelp size={14}/>{connection === "connected" && !feedStale ? "Live public market data · Read-only feed · No account or trading actions are available here." : candles.length || liveTicks.length ? "Market data is " + displayedStatus.toLowerCase() + ". The chart shows the last received quote and may be stale." : "Waiting for the public feed. Chart data is not substituted with illustrative prices."}</div>
         <div className="chart-drawing" role="img" aria-label={candles.length ? "Real public market candle-close price chart" : "Market chart waiting for real data"}>
           {candles.length >= 2 ? <>
             <div className="chart-y-labels"><span>{formatPrice(maximumPrice, pipSize)}</span><span>{formatPrice((maximumPrice + minimumPrice) / 2, pipSize)}</span><span>{formatPrice(minimumPrice, pipSize)}</span></div>
@@ -382,7 +393,7 @@ export function MarketWorkspace() {
         <div className="indicator-toolbar"><span className="field-hint">Indicators are computed from received candle data only:</span>{["Moving average"].map((indicator)=><button key={indicator} className={"indicator-chip " + (enabledIndicators.includes(indicator) ? "active" : "")} onClick={() => toggleIndicator(indicator)}>{indicator}</button>)}</div>
       </div>
       <div className="market-bottom-grid">
-        <div className="panel card-pad"><div className="card-heading"><h2>Market data state</h2><Activity size={16} color="var(--lime)"/></div><div className="list-row"><span className="muted">Selected symbol</span><strong>{selected.symbol}</strong></div><div className="list-row"><span className="muted">Provider connection</span><span className={"status " + (connection === "connected" ? "demo" : "off")}>{statusCopy[connection]}</span></div><div className="list-row"><span className="muted">Last update</span><span className="status">{lastTickAt ? new Date(lastTickAt).toLocaleTimeString() : "Unavailable"}</span></div><div className="list-row"><span className="muted">Data source</span><span className="status">Deriv public WS</span></div><div className="list-row"><span className="muted">Trading actions</span><span className="status off">Not available</span></div></div>
+        <div className="panel card-pad"><div className="card-heading"><h2>Market data state</h2><Activity size={16} color="var(--lime)"/></div><div className="list-row"><span className="muted">Selected symbol</span><strong>{selected.symbol}</strong></div><div className="list-row"><span className="muted">Provider connection</span><span className={"status " + (connection === "connected" && !feedStale ? "demo" : "off")}>{displayedStatus}</span></div><div className="list-row"><span className="muted">Last update</span><span className="status">{lastTickAt ? new Date(lastTickAt).toLocaleTimeString() : "Unavailable"}</span></div><div className="list-row"><span className="muted">Data source</span><span className="status">Deriv public WS</span></div><div className="list-row"><span className="muted">Trading actions</span><span className="status off">Not available</span></div></div>
         <div className="panel card-pad"><div className="card-heading"><h2>Watchlist</h2><ChartCandlestick size={16} color="var(--lime)"/></div>{favorites.length ? favorites.map((value)=><div className="list-row" key={value}><span>{value}</span><button className="btn" onClick={() => setSymbol(value)}>Open</button></div>) : <div className="empty-note">Mark a symbol as a favorite to add it to your watchlist.</div>}<p className="field-hint" style={{marginTop:12}}>Favorites are stored in this browser. No market-data history is saved to the database.</p></div>
       </div>
     </section>
