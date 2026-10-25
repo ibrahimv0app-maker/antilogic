@@ -1,4 +1,23 @@
-import Link from "next/link";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { ArrowLeft, LockKeyhole, ShieldCheck } from "lucide-react";
-export default async function AuthPage({params}:{params:Promise<{mode:string}>}){const {mode}=await params;const config:Record<string,{title:string;description:string;button:string}>={"sign-in":{title:"Welcome back",description:"Sign in to access your Anti Logic workspace.",button:"Continue"},"sign-up":{title:"Create your workspace",description:"Start with a secure account and a demo-first workflow.",button:"Create account"},"forgot-password":{title:"Reset your password",description:"Request a secure password reset link.",button:"Request reset link"},"reset-password":{title:"Choose a new password",description:"A valid, unexpired reset link is required.",button:"Update password"},"verify-email":{title:"Verify your email",description:"Complete email verification to secure your account.",button:"Check verification status"}};const data=config[mode];if(!data)notFound();return <main className="container" style={{minHeight:"100vh",display:"grid",placeItems:"center",paddingTop:40,paddingBottom:40}}><div style={{width:"min(100%,430px)"}}><Link href="/" className="muted" style={{display:"inline-flex",alignItems:"center",gap:7,fontSize:12,marginBottom:24}}><ArrowLeft size={14}/> Back to Anti Logic</Link><div className="panel" style={{padding:28}}><Link href="/" className="brand"><span className="brand-mark">A</span><span>anti logic<span style={{color:"var(--lime)"}}>.</span></span></Link><h1 style={{fontSize:28,letterSpacing:"-.05em",margin:"30px 0 8px"}}>{data.title}</h1><p className="muted" style={{lineHeight:1.7,fontSize:12,marginBottom:22}}>{data.description}</p>{mode==="sign-up"&&<div className="form-field"><label htmlFor="displayName">Display name</label><input id="displayName" autoComplete="name" placeholder="Your name"/></div>}{mode!=="reset-password"&&mode!=="verify-email"&&<div className="form-field"><label htmlFor="email">Email address</label><input id="email" type="email" autoComplete="email" placeholder="you@example.com"/></div>}{(mode==="sign-in"||mode==="sign-up"||mode==="reset-password")&&<div className="form-field"><label htmlFor="password">{mode==="reset-password"?"New password":"Password"}</label><input id="password" type="password" autoComplete={mode==="sign-in"?"current-password":"new-password"} placeholder="At least 12 characters"/></div>}{mode==="sign-up"&&<p className="muted" style={{fontSize:10,lineHeight:1.7}}>By creating an account, you agree to the <Link href="/legal/terms" style={{textDecoration:"underline"}}>Terms</Link> and <Link href="/legal/privacy" style={{textDecoration:"underline"}}>Privacy Policy</Link>.</p>}<button className="btn btn-primary" style={{width:"100%",marginTop:12,opacity:.65,cursor:"not-allowed"}} disabled>{data.button}</button><div className="notice" style={{marginTop:16}}>Authentication is not connected yet. This form is a UI preview and does not create an account, send an email, or change a password.</div><div style={{display:"flex",justifyContent:"space-between",gap:10,flexWrap:"wrap",marginTop:20,fontSize:11}}>{mode!=="sign-in"&&<Link href="/auth/sign-in" className="muted">Sign in</Link>}{mode!=="sign-up"&&<Link href="/auth/sign-up" className="muted">Create account</Link>}{mode!=="forgot-password"&&<Link href="/auth/forgot-password" className="muted">Forgot password?</Link>}</div><div style={{display:"flex",alignItems:"center",gap:7,color:"var(--muted)",fontSize:10,marginTop:24}}><ShieldCheck size={14}/> Secure account controls will be enabled with backend auth.</div></div></div></main>}
+import { AuthForm, type AuthMode } from "@/app/components/auth-form";
+
+const modes = ["sign-in", "sign-up", "forgot-password", "reset-password", "verify-email"] as const;
+
+export async function generateMetadata({ params }: { params: Promise<{ mode: string }> }): Promise<Metadata> {
+  const { mode } = await params;
+  const titles: Record<string, string> = {
+    "sign-in": "Sign in",
+    "sign-up": "Create account",
+    "forgot-password": "Forgot password",
+    "reset-password": "Reset password",
+    "verify-email": "Verify email",
+  };
+  return { title: titles[mode] || "Account access" };
+}
+
+export default async function AuthPage({ params }: { params: Promise<{ mode: string }> }) {
+  const { mode } = await params;
+  if (!modes.includes(mode as AuthMode)) notFound();
+  return <AuthForm mode={mode as AuthMode} />;
+}
